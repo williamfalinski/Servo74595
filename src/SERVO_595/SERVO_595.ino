@@ -4,7 +4,7 @@
 /* 4- FAZER SERVO PULSE ...............*/
 /* 5- ENVIO DE DADOS para o 74595....OK*/
 
-#include "TimerOne.h" //Bilbioteca para utilizar o TIMER1 do Arduino 328p, timer com 16 bits de resolucao
+#include <TimerOne.h> //Bilbioteca para utilizar o TIMER1 do Arduino 328p, timer com 16 bits de resolucao
 /*Valores especificos para o SG90 XING LING*/
 #define MAX_DUTY_CYCLE 2450  //us
 #define MIN_DUTY_CYCLE 550   //us
@@ -39,10 +39,26 @@ void initialize_servos(){
 }
 
 void servoPulse(){
-  //DUTY_CYCLE = map(analogRead(POT), 0, 1023, MIN_DUTY_CYCLE, MAX_DUTY_CYCLE); //Map do potenciometro para o intervalo do servo 
-  //digitalWrite(SERVO, HIGH);
-  //delayMicroseconds(DUTY_CYCLE);
-  //digitalWrite(SERVO, LOW);
+  uint64_t PWM_Start = micros();
+  uint64_t PWM_Now = micros() - PWM_Start;
+  /*Enquanto nao completar um pulso*/
+  while(PWM_Now < PWM_PERIOD){
+    setBits(PWM_Now);
+    loadData_74595();
+    PWM_Now = micros() - PWM_Start;
+  }
+}
+
+/*Vetor de Bits para enviar ao 74595*/
+void setBits(uint64_t pwm_now){
+  for(int i = 0; i < N_SERVOS; i++){
+    if(pwm_now < DUTY_CYCLES[i]){
+       DATA_SERVOS[i] = 1;
+    }
+    else{
+       DATA_SERVOS[i] = 0;
+    }
+  }
 }
 
 /*GRAVA INFORMAÇÕES NO 74595*/
@@ -64,5 +80,5 @@ void loadData_74595(){
 
 void loop()
 {
-  delay(500);
+  //delay(500);
 }
