@@ -20,6 +20,8 @@
 
 uint16_t DUTY_CYCLES[8] = {0,0,0,0,0,0,0,0}; //Periodo em HIGH de cada servo 
 uint8_t  DATA_SERVOS[8] = {0,0,0,0,0,0,0,0}; //Vetor de Binários para enviar ao 74595
+uint64_t PWM_Start;
+uint64_t PWM_Now;
 
 /*INICIALIZA SERVOS EM 0º*/
 /*Especificar numero de servos para evitar calcular servos inexistentes*/
@@ -30,24 +32,22 @@ void initialize_servos(){
 }
 
 void servoPulse(){
-  unsigned long PWM_Start = micros();
-  unsigned long PWM_Now = micros() - PWM_Start;
+  PWM_Start = micros();
+  PWM_Now = micros() - PWM_Start;
   /*Enquanto nao completar um pulso*/
   do{
     setBits(PWM_Now);
     loadData_74595(); 
-    delayMicroseconds(1);
-    PWM_Now = (micros() - PWM_Start);  
+    PWM_Now = (micros() - PWM_Start); 
   }
   while(PWM_Now <= MAX_DUTY_CYCLE);
-  
   /*Zera o resto do periodo*/
   setBits(PWM_PERIOD);
   loadData_74595(); 
 }
 
 /*Vetor de Bits para enviar ao 74595*/
-void setBits(unsigned long pwm_now){
+void setBits(uint64_t pwm_now){
   for(int i = 0; i < N_SERVOS; i++){
     if(pwm_now < DUTY_CYCLES[i]){
        DATA_SERVOS[i] = 1;
@@ -88,6 +88,6 @@ void setup(){
 void loop()
 {
   DUTY_CYCLES[1] = map(analogRead(POT), 0 ,1023, MIN_DUTY_CYCLE, MAX_DUTY_CYCLE);
-  Serial.println(DUTY_CYCLES[1]);
-  delay(0);
+  //Serial.println(DUTY_CYCLES[1]);
+  //delay(0);
 }
