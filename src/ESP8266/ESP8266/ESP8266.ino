@@ -16,16 +16,17 @@
 #define POT   A0
 
 Ticker t_pwm; //Ticker para delay de 20000us
-uint8_t valPot;
+uint16_t valPot;
 
 void servoPulse(){
-  digitalWrite(SERVO, 1);
+  digitalWrite(SERVO, HIGH);
   delayMicroseconds(valPot);
-  digitalWrite(SERVO, 0);
+  digitalWrite(SERVO, LOW);
 }
 
 
 void setup() {
+  Serial.begin(115200);
   pinMode(POT, INPUT);
   pinMode(SERVO, OUTPUT);
   t_pwm.attach_ms(20, servoPulse); //Ticker com periodo PWM em milisegundos e função ISR 
@@ -33,4 +34,5 @@ void setup() {
 
 void loop() {
   valPot = map(analogRead(POT), 0, 1023, 550, 2450); 
+  //Serial.println(valPot);
 }
