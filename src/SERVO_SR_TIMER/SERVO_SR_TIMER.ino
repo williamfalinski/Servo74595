@@ -1,27 +1,28 @@
-/* 1- INICIALIZACAO DOS SERVOS ........*/
-/* 2- SERVO PULSE .....................*/
-/* 3- LER DUTY CYCLE DE CADA SERVO ....*/
-/* 4- FAZER SERVO PULSE ...............*/
-/* 5- ENVIO DE DADOS para o 74595....OK*/
-
+/* NÃO TESTADO
+ *Software para controle de servos SG90 com shift register 74595 
+ *NÃO testado no Arduino 328p
+ *Pinos do 74595 -> DATA - D_CLK - LATCH 
+ *Pinos utilizados do Arduino -> 12 - 13 - 14 - A0(Potenciometro)
+*/
 #include <TimerOne.h> //Bilbioteca para utilizar o TIMER1 do Arduino 328p, timer com 16 bits de resolucao
 /*Valores especificos para o SG90 XING LING*/
 #define MAX_DUTY_CYCLE 2450  //us
 #define MIN_DUTY_CYCLE 550   //us
 #define PWM_PERIOD     20000 //us
 /*******************************************/
-
+#define DATA      12//Pino Dados SER
+#define D_CLK     13//Pino Clock de comunicacao SRCLK
+#define LATCH     14//Pino Latch RCLK
+#define POT       A0//Pino Potenciômetro
 #define N_SERVOS  8 //Quantidade de Servos 
-#define SER       10//Pino Dados
-#define SRCLK     12//Pino Clock de comunicacao
-#define RCLK      11//Pino Latch
-#define POT       A5//Potenciometro
-//#define OE      XX//Pino Enable saidas -> GND
 
+uint16_t valPot;  //Potenciometro
 uint16_t DUTY_CYCLES[8] = {0,0,0,0,0,0,0,0}; //Periodo em HIGH de cada servo 
+/*TODO: UTILIZAR BYTE(s)*/
 uint8_t  DATA_SERVOS[8] = {0,0,0,0,0,0,0,0}; //Vetor de Binários para enviar ao 74595
 uint64_t PWM_Start;
 uint64_t PWM_Now;
+
 
 /*INICIALIZA SERVOS EM 0º*/
 /*Especificar numero de servos para evitar calcular servos inexistentes*/
@@ -31,29 +32,31 @@ void initialize_servos(){
   }
 }
 
+
+/*Handler da interrupção do timer (ISR)*/
 void servoPulse(){
   PWM_Start = micros();
   PWM_Now = micros() - PWM_Start;
+  
   /*Enquanto nao completar um pulso*/
-  do{
+  while(PWM_Now <= MAX_DUTY_CYCLE){
     setBits(PWM_Now);
     loadData_74595(); 
     PWM_Now = (micros() - PWM_Start); 
   }
-  while(PWM_Now <= MAX_DUTY_CYCLE);
   /*Zera o resto do periodo*/
-  setBits(PWM_PERIOD);
+  setBits(20000);
   loadData_74595(); 
 }
 
 /*Vetor de Bits para enviar ao 74595*/
-void setBits(uint64_t pwm_now){
+void setBits(uint64_t t_now){
   for(int i = 0; i < N_SERVOS; i++){
-    if(pwm_now < DUTY_CYCLES[i]){
-       DATA_SERVOS[i] = 1;
+    if(t_now < DUTY_CYCLES[i]){
+       DATA_SERVOS[i] = HIGH;
     }
     else{
-       DATA_SERVOS[i] = 0;
+       DATA_SERVOS[i] = LOW;
     }
   }
 }
@@ -62,23 +65,22 @@ void setBits(uint64_t pwm_now){
 void loadData_74595(){
   /*GRAVA DO ULTIMO PARA O PRIMEIRO BIT*/
   /*CLOCK DO LATCH*/ 
-  digitalWrite(RCLK, LOW);
+  digitalWrite(LATCH, LOW);
   for(int i=N_SERVOS-1; i>=0; i--){
     /*CLOCK DOS REGISTRADORES PRIMARIOS*/
-    digitalWrite(SRCLK, LOW);
-    digitalWrite(SER, DATA_SERVOS[i]);
-    digitalWrite(SRCLK, HIGH);
+    digitalWrite(D_CLK, LOW);
+    digitalWrite(DATA, DATA_SERVOS[i]);
+    digitalWrite(D_CLK, HIGH);
     /*FIM CLOCK DOS REGISTRADORES PRIMARIOS*/
   }
-  digitalWrite(RCLK, HIGH); 
+  digitalWrite(LATCH, HIGH); 
   /*FIM CLOCK DO LATCH*/
 }
 
 void setup(){
-  Serial.begin(9600);
-  pinMode(SER, OUTPUT);
-  pinMode(SRCLK, OUTPUT);
-  pinMode(RCLK, OUTPUT);
+  pinMode(DATA, OUTPUT);
+  pinMode(D_CLK, OUTPUT);
+  pinMode(LATCH, OUTPUT);
   pinMode(POT, INPUT);
   //initialize_servos();
   Timer1.initialize(PWM_PERIOD); // Inicializa o Timer1 e configura para um período de 20 milisegundos

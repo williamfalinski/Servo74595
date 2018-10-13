@@ -49,9 +49,9 @@ void servoPulse(){
 }
 
 /*Vetor de Bits para enviar ao 74595*/
-void setBits(uint64_t pwm_now){
+void setBits(uint64_t t_now){
   for(int i = 0; i < N_SERVOS; i++){
-    if(pwm_now < DUTY_CYCLES[i]){
+    if(t_now < DUTY_CYCLES[i]){
        DATA_SERVOS[i] = HIGH;
     }
     else{
