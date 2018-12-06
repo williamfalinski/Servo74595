@@ -1,9 +1,18 @@
 /*
- *Software para controle de servos SG90 com shift register 74595 
- *testado no ESP8266 utilizando o Ticker
- *Pinos do 74595 -> DATA - D_CLK - LATCH 
- *Pinos utilizados do ESP8266 -> 12 - 13 - 14 - A0(Potenciometro)
+ *  Software para controle de servos SG90 com  
+ *  conversor Serial/Paralelo SN74HC595  
+ *  Testado em NodeMCU 1.0 ESP12-E 
+ *  Pinos do 74595 -> DATA - D_CLK - LATCH 
+ *  Pinos utilizados do ESP8266 -> 12 - 13 - 14
+ *
+ *   Universidade Estadual de Ponta Grossa 2018
+ *   Engenharia de Computação
+ *   Sistemas Embarcados
+ *
+ *   Autores:   William B. Falinski
+ *              Wendel Luiz
 */
+
 #include <Ticker.h>
 /*Valores especificos para o SG90 XING LING*/
 #define MAX_DUTY_CYCLE 2450//us
@@ -13,14 +22,13 @@
 #define DATA      12//Pino Dados SER
 #define D_CLK     13//Pino Clock de comunicacao SRCLK
 #define LATCH     14//Pino Latch RCLK
-#define POT       A0//Pino Potenciômetro
-#define N_SERVOS  8 //Quantidade de Servos 
+#define N_SERVOS  16 //Quantidade de Servos 
 
 Ticker   t_pwm;   //Ticker para delay de 20000us
-uint16_t valPot;  //Potenciometro
-uint16_t DUTY_CYCLES[8] = {0,0,0,0,0,0,0,0}; //Periodo em HIGH de cada servo 
+
+uint16_t DUTY_CYCLES[N_SERVOS] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}; //Periodo em HIGH de cada servo 
 /*TODO: UTILIZAR BYTE(s)*/
-uint8_t  DATA_SERVOS[8] = {0,0,0,0,0,0,0,0}; //Vetor de Binários para enviar ao 74595
+uint8_t  DATA_SERVOS[N_SERVOS] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}; //Vetor de Binários para enviar ao 74595
 uint64_t PWM_Start;
 uint64_t PWM_Now;
 
@@ -33,19 +41,19 @@ void initialize_servos(){
 }
 
 /*Handler da interrupção do ticker (ISR)*/
-void servoPulse(){
+void servoISR(){
   PWM_Start = micros();
   PWM_Now = micros() - PWM_Start;
   
   /*Enquanto nao completar um pulso*/
   while(PWM_Now <= MAX_DUTY_CYCLE){
     setBits(PWM_Now);
-    loadData_74595(); 
+    loadData_CI(); 
     PWM_Now = (micros() - PWM_Start); 
   }
   /*Zera o resto do periodo*/
   setBits(20000);
-  loadData_74595(); 
+  loadData_CI(); 
 }
 
 /*Vetor de Bits para enviar ao 74595*/
@@ -60,7 +68,7 @@ void setBits(uint64_t t_now){
   }
 }
 /*GRAVA INFORMAÇÕES NO 74595*/
-void loadData_74595(){
+void loadData_CI(){
   /*GRAVA DO ULTIMO PARA O PRIMEIRO BIT*/
   /*CLOCK DO LATCH*/ 
   digitalWrite(LATCH, LOW);
@@ -75,23 +83,23 @@ void loadData_74595(){
   /*FIM CLOCK DO LATCH*/
 }
 
+int pass = 0;
+int inc = -36;
+
 void setup() {
-  pinMode(POT, INPUT);
   pinMode(DATA, OUTPUT);
   pinMode(D_CLK, OUTPUT);
   pinMode(LATCH, OUTPUT);
-  t_pwm.attach_ms(PWM_PERIOD, servoPulse); //Ticker com periodo PWM em milisegundos e função ISR 
+  t_pwm.attach_ms(PWM_PERIOD, servoISR); //Ticker com periodo PWM em milisegundos e função ISR 
 }
 
 void loop() {
-  DUTY_CYCLES[1] = map(analogRead(POT), 0, 1023, MIN_DUTY_CYCLE, MAX_DUTY_CYCLE); 
-  /*
-  DUTY_CYCLES[1] = MIN_DUTY_CYCLE;
-  delay(1000);
-  DUTY_CYCLES[1] = (MAX_DUTY_CYCLE + MIN_DUTY_CYCLE) / 2;
-  delay(1000);
-  DUTY_CYCLES[1] = MAX_DUTY_CYCLE;
-  delay(1000);
-   */
+  if(pass == 180 || pass == 0) 
+    inc *= -1;
+  for(int i = 0; i < N_SERVOS; i++){
+    DUTY_CYCLES[i] = map(pass, 0, 180, MIN_DUTY_CYCLE, MAX_DUTY_CYCLE);
+    delay(100);
+  }  
+  pass += inc; 
   
 }
