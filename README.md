@@ -3,4 +3,4 @@
 
 Link das bibliotecas utilizadas até o último commit: 
 - [Ticker](https://github.com/esp8266/Arduino/tree/master/libraries/Ticker) -> (ESP8266) 
-- [TimerOne](https://github.com/PaulStoffregen/TimerOne) -> (Arduino 328p)
+- [TimerOne](https://code.google.com/archive/p/arduino-timerone/downloads) -> (Arduino 328p)
