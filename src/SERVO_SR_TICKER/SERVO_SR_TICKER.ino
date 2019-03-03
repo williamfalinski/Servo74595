@@ -14,7 +14,7 @@
 */
 
 #include <Ticker.h>
-/*Valores especificos para o SG90 XING LING*/
+/*Valores especificos para o SG90*/
 #define MAX_DUTY_CYCLE 2450//us
 #define MIN_DUTY_CYCLE 550 //us
 #define PWM_PERIOD     20  //ms
