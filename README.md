@@ -1,4 +1,4 @@
-# SERVO_74595
+# Servo74595
 ### Software para controlar 8 servos com conversor serial/paralelo SHIFT REGISTER de 8 BITS (SN74HC595)
 
 Link das bibliotecas utilizadas até o último commit: 
